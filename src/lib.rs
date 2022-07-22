@@ -54,7 +54,7 @@ const PRODUCTID: u16 = 0x0002;
 type AudioMothResult<T> = std::result::Result<T, AudioMothError>;
 
 #[derive(Error, Debug)]
-enum AudioMothError {
+pub  enum AudioMothError {
     #[error("HID device not connect")]
     HidError(#[from] hidapi::HidError),
     #[error("OtherError")]
@@ -80,7 +80,7 @@ fn new_hid_device() -> Option<HidDevice> {
     Some(hid)
 }
 
-struct AudioMothDevice {
+pub struct AudioMothDevice {
     device: HidDevice,
 }
 
@@ -97,7 +97,7 @@ impl AudioMothDevice {
     }
 
     //写入数据
-    fn write_call(&self, data: &[u8], callback: impl Fn(Option<String>, Option<&[u8]>)) {
+    pub   fn write_call(&self, data: &[u8], callback: impl Fn(Option<String>, Option<&[u8]>)) {
         self.device.write(data).unwrap();
         let mut buf: [u8; 64] = [0; 64];
         match self.device.read(&mut buf) {
@@ -106,7 +106,7 @@ impl AudioMothDevice {
         };
     }
 
-    fn write(&self, data: &[u8]) -> AudioMothResult<usize> {
+    pub   fn write(&self, data: &[u8]) -> AudioMothResult<usize> {
         match self.device.write(data) {
             Ok(size) => {
                 return Ok(size);
@@ -116,7 +116,7 @@ impl AudioMothDevice {
     }
 
     /// msg_id=>0x01
-    fn get_time(&self) -> AudioMothResult<Option<String>> {
+    pub    fn get_time(&self) -> AudioMothResult<Option<String>> {
         let data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_TIME];
         match self.write(&data) {
             Ok(usize) => {
@@ -146,7 +146,7 @@ impl AudioMothDevice {
     }
 
     /// msg_id=>0x02
-    fn send_time(&self, unix_time_stamp: i64) -> AudioMothResult<usize> {
+    pub     fn send_time(&self, unix_time_stamp: i64) -> AudioMothResult<usize> {
         let mut msg_data = [0x00, USB_MSG_TYPE_SET_TIME, 0x00, 0x00, 0x00, 0x00];
         convert::convert_date_to_four_bytes_in_buffer(&mut msg_data, 2, unix_time_stamp);
         if let Ok(size) = self.write(&msg_data) {
@@ -169,7 +169,7 @@ impl AudioMothDevice {
     }
 
     /// msg_id=>0x03
-    fn get_id(&self) -> AudioMothResult<String> {
+    pub    fn get_id(&self) -> AudioMothResult<String> {
         let data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_UID];
         match self.write(&data) {
             Ok(usize) => {
@@ -193,7 +193,7 @@ impl AudioMothDevice {
         return Err(AudioMothError::OtherError(String::from("get id error")));
     }
     /// msg_id=>0x04
-    fn get_battery(&self) -> AudioMothResult<String> {
+    pub    fn get_battery(&self) -> AudioMothResult<String> {
         let data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_BATTERY];
         match self.write(&data) {
             Ok(usize) => {
@@ -220,7 +220,7 @@ impl AudioMothDevice {
     }
 
     /// msg_id=>0x05
-    fn get_packet(&self) -> AudioMothResult<Option<[u8; 64]>> {
+    pub   fn get_packet(&self) -> AudioMothResult<Option<[u8; 64]>> {
         let msg_data = [0x00, USB_MSG_TYPE_GET_APP_PACKET];
         let mut buff: [u8; 64] = [0; 64];
         match self.write(&msg_data) {
@@ -245,7 +245,7 @@ impl AudioMothDevice {
      *发送一个数据包
      */
     ///msg_id=>0x06
-    fn send_packet(&self, msg_data: &[u8]) -> AudioMothResult<usize> {
+    pub   fn send_packet(&self, msg_data: &[u8]) -> AudioMothResult<usize> {
         let mut buffer = vec![0x00, USB_MSG_TYPE_SET_APP_PACKET];
         msg_data.iter().for_each(|f| buffer.push(*f));
         match self.device.write(&msg_data) {
@@ -257,7 +257,7 @@ impl AudioMothDevice {
     }
 
     /// msg_id=>0x07
-    fn get_firmware_version(&self) -> AudioMothResult<[u8; 3]> {
+    pub   fn get_firmware_version(&self) -> AudioMothResult<[u8; 3]> {
         let buffer = [0x00, USB_MSG_TYPE_GET_FIRMWARE_VERSION];
         match self.write(&buffer) {
             Ok(usize) => {
@@ -288,7 +288,7 @@ impl AudioMothDevice {
     ///获取版本说明
     ///get AudoiMoth for Device firmware description
     /// msg_id=>0x08
-    fn get_firmware_description(&self) -> AudioMothResult<String> {
+    pub    fn get_firmware_description(&self) -> AudioMothResult<String> {
         let buffer = [0x00, USB_MSG_TYPE_GET_FIRMWARE_DESCRIPTION];
         match self.write(&buffer) {
             Ok(usize) => {
@@ -317,7 +317,7 @@ impl AudioMothDevice {
     }
 
     //查询设备bootloader模式
-    fn query_bootloader_state(&self) -> AudioMothResult<bool> {
+    pub    fn query_bootloader_state(&self) -> AudioMothResult<bool> {
         let buffer = [0x00, USB_MSG_TYPE_QUERY_BOOTLOADER];
         let _ = self.write(&buffer).unwrap();
         let mut buf = [0u8; 64];
@@ -326,7 +326,7 @@ impl AudioMothDevice {
     }
 
     //切换设备进入bootloader模式
-    fn switch_to_bootloader(&self) -> AudioMothResult<usize> {
+    pub    fn switch_to_bootloader(&self) -> AudioMothResult<usize> {
         let buffer = [0x00, USB_MSG_TYPE_SWITCH_TO_BOOTLOADER];
         match self.write(&buffer) {
             Ok(_) => {
