@@ -3,13 +3,14 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 
 
 ///msg_id=> 0x01
-pub(crate) fn convert_four_bytes_from_buffer_to_date(buffer: &[u8], offset: usize) -> DateTime<Utc> {
+pub(crate) fn convert_four_bytes_from_buffer_to_date(buffer: &[u8], offset: usize) -> i64 {
     let unix_timestamp: i64 = ((buffer[offset] as i64 & 0xFF)
         + ((buffer[offset + 1] as i64 & 0xFF) << 8_i64)
         + ((buffer[offset + 2] as i64 & 0xFF) << 16_i64)
         + ((buffer[offset + 3] as i64 & 0xFF) << 24_i64))
         .into();
-    DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(unix_timestamp, 0), Utc)
+   // DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(unix_timestamp, 0), Utc)
+   return unix_timestamp; 
 }
 
 ///msg_id=> 0x02 转化时间戳为字节数组下发需要的数组
