@@ -1,4 +1,5 @@
 use chrono::offset;
+use convert::{convert_four_bytes_from_buffer_to_id, make_response_handler};
 use hidapi::HidDevice;
 use std::io;
 use thiserror::Error;
@@ -116,13 +117,25 @@ impl AudioMothDevice {
         }
     }
 
+
+    pub fn call_time(&self, callback: impl Fn(Option<String>, Option<String>)) {
+        let msg_data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_TIME];
+        //通过调用函数返回使用
+        self.write_call(
+            &msg_data,
+            make_response_handler(USB_MSG_TYPE_GET_TIME, convert_four_bytes_from_buffer_to_id, callback),
+        );
+    }
+
     /// msg_id=>0x01
     pub fn get_time(&self) -> AudioMothResult<i64> {
         let msg_data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_TIME];
         match self.send(&msg_data, USB_MSG_TYPE_GET_TIME) {
-            Ok(data) => if let Some(buff) = data {
-                return  Ok(convert::convert_four_bytes_from_buffer_to_date(&buff, 1))
-            },
+            Ok(data) => {
+                if let Some(buff) = data {
+                    return Ok(convert::convert_four_bytes_from_buffer_to_date(&buff, 1));
+                }
+            }
             Err(e) => {
                 return Err(e);
             }
@@ -131,7 +144,6 @@ impl AudioMothDevice {
             "Failed to get time",
         )));
     }
-
     fn send(&self, msg_data: &[u8], msg_type_id: u8) -> AudioMothResult<Option<Box<[u8]>>> {
         let mut buf: [u8; 64] = [0; 64];
         match self.write(msg_data) {
@@ -154,17 +166,20 @@ impl AudioMothDevice {
         return Ok(None);
     }
 
+
     /// msg_id=>0x02
     pub fn send_time(&self, unix_time_stamp: i64) -> AudioMothResult<usize> {
         let mut msg_data = [0x00, USB_MSG_TYPE_SET_TIME, 0x00, 0x00, 0x00, 0x00];
         convert::convert_date_to_four_bytes_in_buffer(&mut msg_data, 2, unix_time_stamp);
         match self.send(&msg_data, USB_MSG_TYPE_SET_TIME) {
-            Ok(data) => if let Some(buff) = data {
-                return Ok(buff.len());
-            },
+            Ok(data) => {
+                if let Some(buff) = data {
+                    return Ok(buff.len());
+                }
+            }
             Err(_) => {
                 return Err(AudioMothError::OtherError(String::from("send time error")));
-            },
+            }
         }
         return Err(AudioMothError::OtherError(String::from("send time error")));
     }
@@ -193,6 +208,8 @@ impl AudioMothDevice {
         }
         return Err(AudioMothError::OtherError(String::from("get id error")));
     }
+
+
     /// msg_id=>0x04
     pub fn get_battery(&self) -> AudioMothResult<String> {
         let data: [u8; 2] = [0x00, USB_MSG_TYPE_GET_BATTERY];

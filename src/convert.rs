@@ -1,7 +1,3 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
-
-
-
 ///msg_id=> 0x01
 pub(crate) fn convert_four_bytes_from_buffer_to_date(buffer: &[u8], offset: usize) -> i64 {
     let unix_timestamp: i64 = ((buffer[offset] as i64 & 0xFF)
@@ -76,7 +72,7 @@ pub(crate) fn convert_bytes_to_bootloader_state(buffer: &[u8], offset: usize) ->
 }
 
 pub(crate) fn make_response_handler(
-    messageType: u16,
+    message_type: u8,
     convert: impl Fn(&[u8], usize) -> String,
     callback: impl Fn(Option<String>, Option<String>),
 ) -> impl Fn(Option<String>, Option<&[u8]>) {
@@ -85,7 +81,13 @@ pub(crate) fn make_response_handler(
             callback(err.clone(), None);
         } else {
             match d {
-                Some(data) => callback(None, Some(convert(data, 1))),
+                Some(data) =>{
+                    if data[0] == message_type {
+                        callback(None, Some(convert(data, 1)))
+                    }else{
+                        callback(Some("接收结果与下发数据类型不匹配".to_string()),None);
+                    }
+                },
                 None => todo!(),
             }
         }
