@@ -22,7 +22,7 @@ fn main(){
     //获取设备固件说明
     let firmware_description  = audio.get_firmware_description().unwrap();
     println!("FirmwareDescription:{:?}",firmware_description);
-    //获取电池情况
+    //获取电池状态
     let firmware_battery  = audio.get_battery().unwrap();
     println!("FirmwareBattery:{:?}",firmware_battery);
     //读取固件所有配置信息
